@@ -1,4 +1,4 @@
-module Decode.Ast.Canonical exposing (aliasType, alias_, annotation, dictToSet, fieldtype, fixedLengthList, keeper, list, maybe, type_, union, unionCtor, unionCtorOpts)
+module Decode.Ast.Canonical exposing (aliasType, alias_, annotation, fieldtype, type_, union, unionCtor, unionCtorOpts)
 
 import Ast.Canonical
 import ElmFile.Interface exposing (Interface)
@@ -28,8 +28,8 @@ union =
                     }
             )
         )
-        |> keeper (list Decode.Util.name)
-        |> keeper (list unionCtor)
+        |> keeper (Decode.Util.list Decode.Util.name)
+        |> keeper (Decode.Util.list unionCtor)
         |> keeper uint64
         |> keeper unionCtorOpts
 
@@ -37,7 +37,7 @@ union =
 alias_ : Decoder64 Ast.Canonical.Alias
 alias_ =
     Decode.succeed (Result.map2 Ast.Canonical.Alias)
-        |> keeper (list Decode.Util.name)
+        |> keeper (Decode.Util.list Decode.Util.name)
         |> keeper type_
 
 
@@ -47,7 +47,7 @@ unionCtor =
         |> keeper Decode.Util.name
         |> keeper uint64
         |> keeper uint64
-        |> keeper (list type_)
+        |> keeper (Decode.Util.list type_)
 
 
 unionCtorOpts : Decoder64 Ast.Canonical.UnionCtorOpts
@@ -144,7 +144,7 @@ type_ =
                             |> keeper Decode.ElmFile.Module.name
                             |> keeper Decode.Util.name
                             |> keeper
-                                (list
+                                (Decode.Util.list
                                     (Decode.succeed (Result.map2 Tuple.pair)
                                         |> keeper Decode.Util.name
                                         |> keeper type_
@@ -156,13 +156,13 @@ type_ =
                         Decode.succeed (Result.map3 Ast.Canonical.TType)
                             |> keeper Decode.ElmFile.Module.name
                             |> keeper Decode.Util.name
-                            |> keeper (list type_)
+                            |> keeper (Decode.Util.list type_)
 
                     n ->
                         Decode.succeed (Result.map3 Ast.Canonical.TType)
                             |> keeper Decode.ElmFile.Module.name
                             |> keeper Decode.Util.name
-                            |> keeper (fixedLengthList type_ (n - 7))
+                            |> keeper (Decode.Util.listLength (n - 7) type_)
             )
 
 
@@ -173,17 +173,6 @@ type_ =
 keeper : Decoder a -> Decoder (a -> b) -> Decoder b
 keeper parseArg parseFunc =
     Decode.map2 (<|) parseFunc parseArg
-
-
-list : Decoder64 a -> Decoder64 (List a)
-list d =
-    uint64
-        |> Decode64.andThen (fixedLengthList d)
-
-
-fixedLengthList : Decoder64 a -> Int -> Decoder64 (List a)
-fixedLengthList =
-    Decode64.fold (::) []
 
 
 dictToSet : Dict comparable v -> Set comparable

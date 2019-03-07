@@ -1,8 +1,9 @@
-module Decode.Util.Decode64 exposing (Decoder64, Error(..), andThen, fold, uint64)
+module Decode.Util.Decode64 exposing (Decoder64, Error(..), andThen, fold, uint64, int64)
 
 import Bytes
 import Bytes.Decode as Decode exposing (Decoder)
 import Result.Extra
+import Bitwise
 
 
 type Error
@@ -18,12 +19,33 @@ uint64 =
     Decode.unsignedInt32 Bytes.BE
         |> Decode.andThen
             (\value ->
-                if value /= 0 then
-                    Decode.succeed (Err <| InterfaceCountTooHigh value)
-
-                else
+                if value == 0 then
                     Decode.unsignedInt32 Bytes.BE
                         |> Decode.map Ok
+
+                else
+                    Decode.succeed (Err <| InterfaceCountTooHigh value)
+            )
+
+
+int64 : Decoder64 Int
+int64 =
+    Decode.signedInt32 Bytes.BE
+        |> Decode.andThen
+            (\value ->
+                if value == 0 then
+                    Decode.signedInt32 Bytes.BE
+                        |> Decode.map Ok
+
+                else if value == -1 then
+                    Decode.signedInt32 Bytes.BE
+                        |> Decode.map (\val ->
+                            if val < 0 then
+                                Ok(val)
+                            else Err <| InterfaceCountTooHigh -1)
+
+                else
+                    Decode.succeed (Err <| InterfaceCountTooHigh value)
             )
 
 
@@ -46,8 +68,8 @@ foldStep func d ( n, acc ) =
             d
 
 
-fold : (a -> b -> b) -> b -> Decoder64 a -> Int -> Decoder64 b
-fold func initial d n =
+fold : (a -> b -> b) -> b -> Int -> Decoder64 a -> Decoder64 b
+fold func initial n d =
     Decode.loop
         ( n, initial )
         (foldStep func d)

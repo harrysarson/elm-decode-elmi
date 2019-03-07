@@ -5,3 +5,5 @@ set -e
 elm make src/Main.elm --output elm.js
 
 node main
+
+rm elm.js
