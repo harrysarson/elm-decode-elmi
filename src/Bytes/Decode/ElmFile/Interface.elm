@@ -1,4 +1,4 @@
-module Decode.ElmFile.Interface exposing (interface, interfaces)
+module Bytes.Decode.ElmFile.Interface exposing (interface, interfaces)
 
 import Ast.Canonical
 import ElmFile.Interface exposing (Interface, Interfaces)
@@ -6,14 +6,14 @@ import ElmFile.Module
 import Bytes
 import Bytes.Decode as Decode exposing (Decoder)
 import Bytes.Encode as Encode exposing (Encoder)
-import Decode.Ast.Canonical
-import Decode.ElmFile.Module
-import Decode.Util
-import Decode.Util.Decode64 as Decode64 exposing (Decoder64, uint64)
+import Bytes.Decode.Ast.Canonical
+import Bytes.Decode.ElmFile.Module
+import Bytes.Decode.Util
+import Bytes.Decode.Util.Decode64 as Decode64 exposing (Decoder64, uint64)
 import Dict exposing (Dict)
 import Maybe.Extra
 import  Ast.BinaryOperation
-import Decode.Ast.BinaryOperation
+import Bytes.Decode.Ast.BinaryOperation
 import Result.Extra
 import Set exposing (Set)
 
@@ -22,8 +22,8 @@ interfaces : Decoder64 Interfaces
 interfaces =
     Decode.map
         (Result.map ElmFile.Interface.Interfaces)
-        (Decode.Util.list <|
-            Decode.map2 (Result.map2 Tuple.pair) (Decode.ElmFile.Module.name) interface
+        (Bytes.Decode.Util.list <|
+            Decode.map2 (Result.map2 Tuple.pair) (Bytes.Decode.ElmFile.Module.name) interface
         )
 
 
@@ -40,20 +40,20 @@ interface =
                     }
             )
         )
-        (Decode.Util.decodeDict
-            Decode.Util.name
-            Decode.Ast.Canonical.annotation
+        (Bytes.Decode.Util.decodeDict
+            Bytes.Decode.Util.name
+            Bytes.Decode.Ast.Canonical.annotation
         )
-        (Decode.Util.decodeDict
-            Decode.Util.name
+        (Bytes.Decode.Util.decodeDict
+            Bytes.Decode.Util.name
             union
         )
-        (Decode.Util.decodeDict
-            Decode.Util.name
+        (Bytes.Decode.Util.decodeDict
+            Bytes.Decode.Util.name
             alias_
         )
-        (Decode.Util.decodeDict
-            Decode.Util.name
+        (Bytes.Decode.Util.decodeDict
+            Bytes.Decode.Util.name
             binaryOperation
         )
 
@@ -65,13 +65,13 @@ union =
             (\id ->
                 case id of
                     0 ->
-                        Decode.Ast.Canonical.union |> Decode.map (Result.map ElmFile.Interface.OpenUnion)
+                        Bytes.Decode.Ast.Canonical.union |> Decode.map (Result.map ElmFile.Interface.OpenUnion)
 
                     1 ->
-                        Decode.Ast.Canonical.union |> Decode.map (Result.map ElmFile.Interface.ClosedUnion)
+                        Bytes.Decode.Ast.Canonical.union |> Decode.map (Result.map ElmFile.Interface.ClosedUnion)
 
                     2 ->
-                        Decode.Ast.Canonical.union |> Decode.map (Result.map ElmFile.Interface.PrivateUnion)
+                        Bytes.Decode.Ast.Canonical.union |> Decode.map (Result.map ElmFile.Interface.PrivateUnion)
 
                     _ ->
                         Decode.fail
@@ -85,10 +85,10 @@ alias_ =
             (\id ->
                 case id of
                     0 ->
-                        Decode.Ast.Canonical.alias_ |> Decode.map (Result.map ElmFile.Interface.PublicAlias)
+                        Bytes.Decode.Ast.Canonical.alias_ |> Decode.map (Result.map ElmFile.Interface.PublicAlias)
 
                     1 ->
-                        Decode.Ast.Canonical.alias_ |> Decode.map (Result.map ElmFile.Interface.PrivateAlias)
+                        Bytes.Decode.Ast.Canonical.alias_ |> Decode.map (Result.map ElmFile.Interface.PrivateAlias)
 
                     _ ->
                         Decode.fail
@@ -108,8 +108,8 @@ binaryOperation =
                     }
             )
         )
-        Decode.Util.name
-        Decode.Ast.Canonical.annotation
-        Decode.Ast.BinaryOperation.associativity
-        Decode.Ast.BinaryOperation.precedence
+        Bytes.Decode.Util.name
+        Bytes.Decode.Ast.Canonical.annotation
+        Bytes.Decode.Ast.BinaryOperation.associativity
+        Bytes.Decode.Ast.BinaryOperation.precedence
 

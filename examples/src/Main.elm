@@ -4,13 +4,13 @@ import Ast.Canonical
 import Base64
 import Bytes.Decode
 import Bytes.Encode
-import Decode.ElmFile.Interface
+import Bytes.Decode.ElmFile.Interface
 import ElmFile.Interface
 import ElmFile.Module
 import ElmFile.Package
 import Dict
 import Platform
-import Decode.Util.Decode64
+import Bytes.Decode.Util.Decode64
 
 port scanElmi : (String -> msg) -> Sub msg
 
@@ -23,7 +23,7 @@ type alias Flags =
 type Error
     = DecodingError
     | EncodingBase64Failed
-    | FormatError Decode.Util.Decode64.Error
+    | FormatError Bytes.Decode.Util.Decode64.Error
 
 type Msg
     = ScanElmi String
@@ -52,7 +52,7 @@ update msg () =
                 interface =
                     elmi
                         |> Result.andThen
-                            (Bytes.Decode.decode Decode.ElmFile.Interface.interface
+                            (Bytes.Decode.decode Bytes.Decode.ElmFile.Interface.interface
                                 >> Maybe.map (Result.mapError FormatError)
                                 >> Maybe.withDefault (Err DecodingError))
 
@@ -104,7 +104,7 @@ update msg () =
                 interfaces =
                     elmi
                         |> Result.andThen
-                            (Bytes.Decode.decode Decode.ElmFile.Interface.interfaces
+                            (Bytes.Decode.decode Bytes.Decode.ElmFile.Interface.interfaces
                                 >> Maybe.map (Result.mapError FormatError)
                                 >> Maybe.withDefault (Err DecodingError))
 

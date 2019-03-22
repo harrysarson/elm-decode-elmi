@@ -1,6 +1,6 @@
-module Decode.Ast.BinaryOperation exposing (..)
+module Bytes.Decode.Ast.BinaryOperation exposing (..)
 
-import Decode.Util.Decode64 as Decode64 exposing (Decoder64)
+import Bytes.Decode.Util.Decode64 as Decode64 exposing (Decoder64)
 import Bytes.Decode as Decode
 import Ast.BinaryOperation
 

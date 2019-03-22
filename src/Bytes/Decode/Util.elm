@@ -1,7 +1,7 @@
-module Decode.Util exposing (decodeDict, name, list, listLength)
+module Bytes.Decode.Util exposing (decodeDict, name, list, listLength)
 
 import Bytes.Decode as Decode
-import Decode.Util.Decode64 as Decode64 exposing (Decoder64)
+import Bytes.Decode.Util.Decode64 as Decode64 exposing (Decoder64)
 import Dict exposing (Dict)
 import Result.Extra
 

@@ -1,9 +1,9 @@
-module Decode.ElmFile.Package exposing (name)
+module Bytes.Decode.ElmFile.Package exposing (name)
 
 import ElmFile.Package
 import Bytes.Decode as Decode
-import Decode.Util
-import Decode.Util.Decode64 exposing (Decoder64)
+import Bytes.Decode.Util
+import Bytes.Decode.Util.Decode64 exposing (Decoder64)
 
 
 name : Decoder64 ElmFile.Package.Name
@@ -17,5 +17,5 @@ name =
                     }
             )
         )
-        Decode.Util.name
-        Decode.Util.name
+        Bytes.Decode.Util.name
+        Bytes.Decode.Util.name

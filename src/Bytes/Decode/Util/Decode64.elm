@@ -1,4 +1,4 @@
-module Decode.Util.Decode64 exposing (Decoder64, Error(..), andThen, fold, uint64, int64)
+module Bytes.Decode.Util.Decode64 exposing (Decoder64, Error(..), andThen, fold, uint64, int64)
 
 import Bytes
 import Bytes.Decode as Decode exposing (Decoder)
