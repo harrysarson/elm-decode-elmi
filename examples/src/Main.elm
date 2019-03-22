@@ -11,6 +11,7 @@ import ElmFile.Package
 import Dict
 import Platform
 import Bytes.Decode.Util.Decode64
+import Debug
 
 port scanElmi : (String -> msg) -> Sub msg
 
@@ -52,9 +53,8 @@ update msg () =
                 interface =
                     elmi
                         |> Result.andThen
-                            (Bytes.Decode.decode Bytes.Decode.ElmFile.Interface.interface
-                                >> Maybe.map (Result.mapError FormatError)
-                                >> Maybe.withDefault (Err DecodingError))
+                            (Bytes.Decode.decode (Bytes.Decode.ElmFile.Interface.interface logger)
+                                >> Result.fromMaybe (DecodingError))
 
                 _ =
                     interface
@@ -104,9 +104,10 @@ update msg () =
                 interfaces =
                     elmi
                         |> Result.andThen
-                            (Bytes.Decode.decode Bytes.Decode.ElmFile.Interface.interfaces
-                                >> Maybe.map (Result.mapError FormatError)
-                                >> Maybe.withDefault (Err DecodingError))
+                            ((Bytes.Decode.decode (Bytes.Decode.ElmFile.Interface.interfaces logger))
+                                >> Result.fromMaybe DecodingError
+                                )
+
 
                 _ =
                     interfaces
@@ -119,3 +120,7 @@ update msg () =
                         ))
             in
                 ((), Cmd.none)
+
+logger : Int -> Int -> never
+logger upper lower =
+    Debug.todo ("64 bit number found in binary (" ++ String.fromInt upper ++ " << 32 + " ++ String.fromInt lower ++ ")")

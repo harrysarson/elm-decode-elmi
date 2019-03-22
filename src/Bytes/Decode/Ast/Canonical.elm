@@ -8,18 +8,16 @@ import Bytes.Decode as Decode exposing (Decoder)
 import Bytes.Encode as Encode exposing (Encoder)
 import Bytes.Decode.ElmFile.Module
 import Bytes.Decode.Util
-import Bytes.Decode.Util.Decode64 as Decode64 exposing (Decoder64, uint64)
 import Dict exposing (Dict)
 import Maybe.Extra
 import Result.Extra
 import Set exposing (Set)
 
 
-union : Decoder64 Ast.Canonical.Union
-union =
+union : (Int -> Int -> any) -> Decoder Ast.Canonical.Union
+union cb =
     Decode.succeed
-        (Result.map4
-            (\vars alts numAlts opts ->
+         (\vars alts numAlts opts ->
                 Ast.Canonical.Union
                     { vars = vars
                     , alts = alts
@@ -27,30 +25,29 @@ union =
                     , opts = opts
                     }
             )
-        )
-        |> keeper (Bytes.Decode.Util.list Bytes.Decode.Util.name)
-        |> keeper (Bytes.Decode.Util.list unionCtor)
-        |> keeper uint64
+        |> keeper (Bytes.Decode.Util.list (Bytes.Decode.Util.name cb) cb)
+        |> keeper (Bytes.Decode.Util.list (unionCtor cb) cb)
+        |> keeper (Bytes.Decode.Util.uint64 cb)
         |> keeper unionCtorOpts
 
 
-alias_ : Decoder64 Ast.Canonical.Alias
-alias_ =
-    Decode.succeed (Result.map2 Ast.Canonical.Alias)
-        |> keeper (Bytes.Decode.Util.list Bytes.Decode.Util.name)
-        |> keeper type_
+alias_ : (Int -> Int -> any) -> Decoder Ast.Canonical.Alias
+alias_ cb =
+    Decode.succeed (Ast.Canonical.Alias)
+        |> keeper (Bytes.Decode.Util.list (Bytes.Decode.Util.name cb) cb)
+        |> keeper (type_ cb)
 
 
-unionCtor : Decoder64 Ast.Canonical.UnionCtor
-unionCtor =
-    Decode.succeed (Result.map4 Ast.Canonical.UnionCtor)
-        |> keeper Bytes.Decode.Util.name
-        |> keeper uint64
-        |> keeper uint64
-        |> keeper (Bytes.Decode.Util.list type_)
+unionCtor : (Int -> Int -> any) -> Decoder Ast.Canonical.UnionCtor
+unionCtor cb =
+    Decode.succeed (Ast.Canonical.UnionCtor)
+        |> keeper (Bytes.Decode.Util.name cb)
+        |> keeper (Bytes.Decode.Util.uint64 cb)
+        |> keeper (Bytes.Decode.Util.uint64 cb)
+        |> keeper (Bytes.Decode.Util.list (type_ cb) cb)
 
 
-unionCtorOpts : Decoder64 Ast.Canonical.UnionCtorOpts
+unionCtorOpts : Decoder Ast.Canonical.UnionCtorOpts
 unionCtorOpts =
     Decode.unsignedInt8
         |> Decode.andThen
@@ -68,101 +65,102 @@ unionCtorOpts =
                     _ ->
                         Decode.fail
             )
-        |> Decode.map Ok
 
 
-annotation : Decoder64 Ast.Canonical.Annotation
-annotation =
-    Decode.map2 (Result.map2 Ast.Canonical.Annotation)
+annotation : (Int -> Int -> any) -> Decoder Ast.Canonical.Annotation
+annotation cb =
+    Decode.map2 (Ast.Canonical.Annotation)
         (Bytes.Decode.Util.decodeDict
-            Bytes.Decode.Util.name
-            (Decode.succeed <| Ok ())
-            |> Decode.map (Result.map dictToSet)
+            (Bytes.Decode.Util.name cb)
+            (Decode.succeed ())
+            cb
+            |> Decode.map dictToSet
         )
-        type_
+        (type_ cb)
 
 
-aliasType : Decoder64 Ast.Canonical.AliasType
-aliasType =
+aliasType : (Int -> Int -> any) -> Decoder Ast.Canonical.AliasType
+aliasType cb =
     Decode.unsignedInt8
         |> Decode.andThen
             (\id ->
                 case id of
                     0 ->
-                        Decode.succeed (Result.map Ast.Canonical.Holey)
-                            |> keeper type_
+                        Decode.succeed (Ast.Canonical.Holey)
+                            |> keeper (type_ cb)
 
                     1 ->
-                        Decode.succeed (Result.map Ast.Canonical.Filled)
-                            |> keeper type_
+                        Decode.succeed (Ast.Canonical.Filled)
+                            |> keeper (type_ cb)
 
                     _ ->
                         Decode.fail
             )
 
 
-fieldtype : Decoder64 Ast.Canonical.FieldType
-fieldtype =
-    Decode.succeed (\a -> Result.map (Ast.Canonical.FieldType a))
+fieldtype : (Int -> Int -> any) -> Decoder Ast.Canonical.FieldType
+fieldtype cb =
+    Decode.succeed Ast.Canonical.FieldType
         |> keeper (Decode.unsignedInt16 Bytes.BE)
-        |> keeper type_
+        |> keeper (type_ cb)
 
 
-type_ : Decoder64 Ast.Canonical.Type
-type_ =
+type_ : (Int -> Int -> any) ->  Decoder Ast.Canonical.Type
+type_ cb =
     Decode.unsignedInt8
         |> Decode.andThen
             (\id ->
                 case id of
                     0 ->
-                        Decode.succeed (Result.map2 Ast.Canonical.TLambda)
-                            |> keeper type_
-                            |> keeper type_
+                        Decode.succeed Ast.Canonical.TLambda
+                            |> keeper (type_ cb)
+                            |> keeper (type_ cb)
 
                     1 ->
-                        Decode.succeed (Result.map Ast.Canonical.TVar)
-                            |> keeper Bytes.Decode.Util.name
+                        Decode.succeed Ast.Canonical.TVar
+                            |> keeper (Bytes.Decode.Util.name cb)
 
                     2 ->
-                        Decode.succeed (Result.map2 Ast.Canonical.TRecord)
-                            |> keeper (Bytes.Decode.Util.decodeDict Bytes.Decode.Util.name fieldtype)
+                        Decode.succeed Ast.Canonical.TRecord
+                            |> keeper (Bytes.Decode.Util.decodeDict (Bytes.Decode.Util.name cb) (fieldtype cb) cb)
                             |> keeper
-                                (maybe Bytes.Decode.Util.name)
+                                (maybe (Bytes.Decode.Util.name cb))
 
                     3 ->
-                        Decode.succeed (Ok Ast.Canonical.TUnit)
+                        Decode.succeed  Ast.Canonical.TUnit
 
                     4 ->
-                        Decode.succeed (Result.map3 Ast.Canonical.TTuple)
-                            |> keeper type_
-                            |> keeper type_
+                        Decode.succeed (Ast.Canonical.TTuple)
+                            |> keeper (type_ cb)
+                            |> keeper (type_ cb)
                             |> keeper
-                                (maybe type_)
+                                (maybe (type_ cb))
 
                     5 ->
-                        Decode.succeed (Result.map4 Ast.Canonical.TAlias)
-                            |> keeper Bytes.Decode.ElmFile.Module.name
-                            |> keeper Bytes.Decode.Util.name
+                        Decode.succeed Ast.Canonical.TAlias
+                            |> keeper (Bytes.Decode.ElmFile.Module.name cb)
+                            |> keeper (Bytes.Decode.Util.name cb)
                             |> keeper
                                 (Bytes.Decode.Util.list
-                                    (Decode.succeed (Result.map2 Tuple.pair)
-                                        |> keeper Bytes.Decode.Util.name
-                                        |> keeper type_
+                                    (Decode.succeed Tuple.pair
+                                        |> keeper (Bytes.Decode.Util.name cb)
+                                        |> keeper (type_ cb)
                                     )
+                                    cb
                                 )
-                            |> keeper aliasType
+                            |> keeper (aliasType cb)
 
                     6 ->
-                        Decode.succeed (Result.map3 Ast.Canonical.TType)
-                            |> keeper Bytes.Decode.ElmFile.Module.name
-                            |> keeper Bytes.Decode.Util.name
-                            |> keeper (Bytes.Decode.Util.list type_)
+                        Decode.succeed (Ast.Canonical.TType)
+                            |> keeper (Bytes.Decode.ElmFile.Module.name cb)
+                            |> keeper (Bytes.Decode.Util.name cb)
+                            |> keeper (Bytes.Decode.Util.list (type_ cb) cb)
 
                     n ->
-                        Decode.succeed (Result.map3 Ast.Canonical.TType)
-                            |> keeper Bytes.Decode.ElmFile.Module.name
-                            |> keeper Bytes.Decode.Util.name
-                            |> keeper (Bytes.Decode.Util.listLength (n - 7) type_)
+                        Decode.succeed (Ast.Canonical.TType)
+                            |> keeper (Bytes.Decode.ElmFile.Module.name cb)
+                            |> keeper (Bytes.Decode.Util.name cb)
+                            |> keeper (Bytes.Decode.Util.listLength (n - 7) (type_ cb))
             )
 
 
@@ -182,7 +180,7 @@ dictToSet =
         >> Set.fromList
 
 
-maybe : Decoder64 a -> Decoder64 (Maybe a)
+maybe : Decoder a -> Decoder (Maybe a)
 maybe d =
     Decode.unsignedInt8
         |> Decode.andThen
@@ -196,8 +194,4 @@ maybe d =
 
                     _ ->
                         Decode.fail
-            )
-        |> Decode.map
-            (Maybe.map (Result.map Just)
-                >> Maybe.withDefault (Ok Nothing)
             )

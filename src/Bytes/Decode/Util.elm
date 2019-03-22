@@ -1,39 +1,100 @@
-module Bytes.Decode.Util exposing (decodeDict, name, list, listLength)
+module Bytes.Decode.Util exposing (decodeDict, name, list, listLength, uint64, int64)
 
-import Bytes.Decode as Decode
-import Bytes.Decode.Util.Decode64 as Decode64 exposing (Decoder64)
+import Bytes
+import Bytes.Decode as Decode exposing (Decoder)
 import Dict exposing (Dict)
 import Result.Extra
 
 
-name : Decoder64 String
-name =
-    Decode64.uint64
+
+uint64 : (Int -> Int -> any) -> Decoder Int
+uint64 cb =
+    Decode.unsignedInt32 Bytes.BE
         |> Decode.andThen
-            (\countR ->
-                countR
-                    |> Result.map (Decode.string >> Decode.map Ok)
-                    |> Result.Extra.extract (\e -> Decode.succeed (Err e))
+            (\upper ->
+                let
+                    lowerDecoder = Decode.unsignedInt32 Bytes.BE
+                in
+                if upper == 0 then
+                    lowerDecoder
+
+                else
+                    let
+                        _ = Decode.map (cb upper) lowerDecoder
+                    in
+                    Decode.fail
             )
 
 
-decodeDict : Decoder64 comparable -> Decoder64 b -> Decoder64 (Dict comparable b)
-decodeDict keyDecoder valueDecoder =
-    Decode64.uint64
-        |> Decode64.andThen
-            (\len -> Decode64.fold
+int64 : (Int -> Int -> any) -> Decoder Int
+int64 cb =
+    Decode.signedInt32 Bytes.BE
+        |> Decode.andThen
+            (\upper ->
+                let
+                    lowerDecoder = Decode.signedInt32 Bytes.BE
+                in
+                if upper == 0 then
+                    lowerDecoder
+
+                else if upper == -1 then
+                    lowerDecoder
+                        |> Decode.andThen (\lower -> if lower < 0 then
+                            Decode.succeed lower
+                        else
+                            let
+                                _ = cb upper lower
+                            in
+                            Decode.fail
+                        )
+                else
+                    let
+                        _ = Decode.map (cb upper) lowerDecoder
+                    in
+                    Decode.fail
+            )
+
+
+name : (Int -> Int -> any) -> Decoder String
+name cb =
+    uint64 cb
+        |> Decode.andThen Decode.string
+
+decodeDict : Decoder comparable -> Decoder b -> (Int -> Int -> any) -> Decoder (Dict comparable b)
+decodeDict keyDecoder valueDecoder cb =
+    uint64 cb
+        |> Decode.andThen
+            (\len -> fold
                 (\( k, v ) dict -> Dict.insert k v dict)
                 Dict.empty
                 len
-                (Decode.map2 (Result.map2 Tuple.pair) keyDecoder valueDecoder)
+                (Decode.map2 Tuple.pair keyDecoder valueDecoder)
             )
 
-list : Decoder64 a -> Decoder64 (List a)
-list d =
-    Decode64.uint64
-        |> Decode64.andThen (\n -> listLength n d)
+list : Decoder a -> (Int -> Int -> any) -> Decoder (List a)
+list d cb =
+    uint64 cb
+        |> Decode.andThen (\n -> listLength n d)
 
 
-listLength : Int -> Decoder64 a -> Decoder64 (List a)
+listLength : Int -> Decoder a -> Decoder (List a)
 listLength n decoder =
-    Decode64.fold (::) [] n decoder
+    fold (::) [] n decoder
+
+
+foldStep : (a -> b -> b) -> Decoder a -> ( Int, b ) -> Decoder (Decode.Step ( Int, b ) b)
+foldStep func d ( n, acc ) =
+    if n <= 0 then
+        Decode.succeed (Decode.Done acc)
+
+    else
+        Decode.map
+            (\x -> Decode.Loop ( n - 1, func x acc ))
+            d
+
+
+fold : (a -> b -> b) -> b -> Int -> Decoder a -> Decoder b
+fold func initial length d =
+    Decode.loop
+        ( length, initial )
+        (foldStep func d)

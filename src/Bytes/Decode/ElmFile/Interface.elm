@@ -9,29 +9,30 @@ import Bytes.Encode as Encode exposing (Encoder)
 import Bytes.Decode.Ast.Canonical
 import Bytes.Decode.ElmFile.Module
 import Bytes.Decode.Util
-import Bytes.Decode.Util.Decode64 as Decode64 exposing (Decoder64, uint64)
 import Dict exposing (Dict)
-import Maybe.Extra
 import  Ast.BinaryOperation
 import Bytes.Decode.Ast.BinaryOperation
-import Result.Extra
 import Set exposing (Set)
 
 
-interfaces : Decoder64 Interfaces
-interfaces =
+interfaces : (Int -> Int -> any) -> Decoder Interfaces
+interfaces cb =
     Decode.map
-        (Result.map ElmFile.Interface.Interfaces)
-        (Bytes.Decode.Util.list <|
-            Decode.map2 (Result.map2 Tuple.pair) (Bytes.Decode.ElmFile.Module.name) interface
+        (ElmFile.Interface.Interfaces)
+        (Bytes.Decode.Util.list
+            (Decode.map2
+            (Tuple.pair)
+             (Bytes.Decode.ElmFile.Module.name cb)
+             (interface cb)
+            )
+            cb
         )
 
 
-interface : Decoder64 Interface
-interface =
+interface : (Int -> Int -> any) -> Decoder Interface
+interface cb =
     Decode.map4
-        (Result.map4
-            (\d u a b ->
+        (\d u a b ->
                 ElmFile.Interface.Interface
                     { types_ = d
                     , unions = u
@@ -39,67 +40,69 @@ interface =
                     , binaryOperations = b
                     }
             )
+        (Bytes.Decode.Util.decodeDict
+            (Bytes.Decode.Util.name cb)
+            (Bytes.Decode.Ast.Canonical.annotation cb)
+            cb
         )
         (Bytes.Decode.Util.decodeDict
-            Bytes.Decode.Util.name
-            Bytes.Decode.Ast.Canonical.annotation
+            (Bytes.Decode.Util.name cb)
+            (union cb)
+            cb
         )
         (Bytes.Decode.Util.decodeDict
-            Bytes.Decode.Util.name
-            union
+            (Bytes.Decode.Util.name cb)
+            (alias_ cb)
+            cb
         )
         (Bytes.Decode.Util.decodeDict
-            Bytes.Decode.Util.name
-            alias_
-        )
-        (Bytes.Decode.Util.decodeDict
-            Bytes.Decode.Util.name
-            binaryOperation
+            (Bytes.Decode.Util.name cb)
+            (binaryOperation cb)
+            cb
         )
 
 
-union : Decoder64 ElmFile.Interface.Union
-union =
+union : (Int -> Int -> any) -> Decoder ElmFile.Interface.Union
+union cb =
     Decode.unsignedInt8
         |> Decode.andThen
             (\id ->
                 case id of
                     0 ->
-                        Bytes.Decode.Ast.Canonical.union |> Decode.map (Result.map ElmFile.Interface.OpenUnion)
+                        Bytes.Decode.Ast.Canonical.union cb |> Decode.map (ElmFile.Interface.OpenUnion)
 
                     1 ->
-                        Bytes.Decode.Ast.Canonical.union |> Decode.map (Result.map ElmFile.Interface.ClosedUnion)
+                        Bytes.Decode.Ast.Canonical.union cb |> Decode.map (ElmFile.Interface.ClosedUnion)
 
                     2 ->
-                        Bytes.Decode.Ast.Canonical.union |> Decode.map (Result.map ElmFile.Interface.PrivateUnion)
+                        Bytes.Decode.Ast.Canonical.union cb |> Decode.map (ElmFile.Interface.PrivateUnion)
 
                     _ ->
                         Decode.fail
             )
 
 
-alias_ : Decoder64 ElmFile.Interface.Alias
-alias_ =
+alias_ :  (Int -> Int -> any) -> Decoder ElmFile.Interface.Alias
+alias_  cb =
     Decode.unsignedInt8
         |> Decode.andThen
             (\id ->
                 case id of
                     0 ->
-                        Bytes.Decode.Ast.Canonical.alias_ |> Decode.map (Result.map ElmFile.Interface.PublicAlias)
+                        Bytes.Decode.Ast.Canonical.alias_ cb |> Decode.map (ElmFile.Interface.PublicAlias)
 
                     1 ->
-                        Bytes.Decode.Ast.Canonical.alias_ |> Decode.map (Result.map ElmFile.Interface.PrivateAlias)
+                        Bytes.Decode.Ast.Canonical.alias_ cb |> Decode.map (ElmFile.Interface.PrivateAlias)
 
                     _ ->
                         Decode.fail
             )
 
 
-binaryOperation : Decoder64 ElmFile.Interface.BinaryOperation
-binaryOperation =
+binaryOperation : (Int -> Int -> any) -> Decoder ElmFile.Interface.BinaryOperation
+binaryOperation cb =
     Decode.map4
-        (Result.map4
-            (\n an ass p ->
+        (\n an ass p ->
                 ElmFile.Interface.BinaryOperation
                     { name = n
                     , annotation = an
@@ -107,9 +110,8 @@ binaryOperation =
                     , precedence = p
                     }
             )
-        )
-        Bytes.Decode.Util.name
-        Bytes.Decode.Ast.Canonical.annotation
+        (Bytes.Decode.Util.name cb)
+        (Bytes.Decode.Ast.Canonical.annotation cb)
         Bytes.Decode.Ast.BinaryOperation.associativity
-        Bytes.Decode.Ast.BinaryOperation.precedence
+        (Bytes.Decode.Ast.BinaryOperation.precedence cb)
 
