@@ -1,7 +1,7 @@
 {
     "type": "package",
-    "name": "harrysarson/parse-elmi",
-    "summary": "Parse elmi.",
+    "name": "harrysarson/elm-decode-elmi",
+    "summary": "Decode binary elmi files.",
     "license": "MIT",
     "version": "1.0.0",
     "exposed-modules": [
