@@ -6,6 +6,8 @@ import Bytes.Decode.ElmFile.Package
 import Bytes.Decode.Util
 
 
+{-| Decoder for the name of an elm module.
+-}
 name :  (Int -> Int -> any) -> Decoder ElmFile.Module.Name
 name cb =
     Decode.map2

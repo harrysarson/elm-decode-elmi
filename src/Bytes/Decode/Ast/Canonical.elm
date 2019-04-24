@@ -1,4 +1,4 @@
-module Bytes.Decode.Ast.Canonical exposing (aliasType, alias_, annotation, fieldtype, type_, union, unionCtor, unionCtorOpts)
+module Bytes.Decode.Ast.Canonical exposing (aliasType, alias, annotation, fieldtype, type_, union)
 
 import Ast.Canonical
 import ElmFile.Interface exposing (Interface)
@@ -14,30 +14,34 @@ import Result.Extra
 import Set exposing (Set)
 
 
+{-| Decoder for an elm custom type.
+-}
 union : (Int -> Int -> any) -> Decoder Ast.Canonical.Union
 union cb =
     Decode.succeed
-         (\vars alts numAlts opts ->
+         (\vars alts ->
                 Ast.Canonical.Union
                     { vars = vars
                     , alts = alts
-                    , numAlts = numAlts
-                    , opts = opts
                     }
             )
         |> keeper (Bytes.Decode.Util.list (Bytes.Decode.Util.name cb) cb)
         |> keeper (Bytes.Decode.Util.list (unionCtor cb) cb)
-        |> keeper (Bytes.Decode.Util.uint64 cb)
-        |> keeper unionCtorOpts
+        |> ignore (Bytes.Decode.Util.uint64 cb)
+        |> ignore unionCtorOpts
 
 
-alias_ : (Int -> Int -> any) -> Decoder Ast.Canonical.Alias
-alias_ cb =
+{-| Decoder for an elm type alias.
+-}
+alias : (Int -> Int -> any) -> Decoder Ast.Canonical.Alias
+alias cb =
     Decode.succeed (Ast.Canonical.Alias)
         |> keeper (Bytes.Decode.Util.list (Bytes.Decode.Util.name cb) cb)
         |> keeper (type_ cb)
 
 
+{-| Decoder for the constructor of an elm custom type alternative.
+-}
 unionCtor : (Int -> Int -> any) -> Decoder Ast.Canonical.UnionCtor
 unionCtor cb =
     Decode.succeed (Ast.Canonical.UnionCtor)
@@ -47,26 +51,28 @@ unionCtor cb =
         |> keeper (Bytes.Decode.Util.list (type_ cb) cb)
 
 
-unionCtorOpts : Decoder Ast.Canonical.UnionCtorOpts
+unionCtorOpts : Decoder ()
 unionCtorOpts =
     Decode.unsignedInt8
         |> Decode.andThen
             (\id ->
                 case id of
                     0 ->
-                        Decode.succeed Ast.Canonical.CtorOptNormal
+                        Decode.succeed () -- Ast.Canonical.CtorOptNormal
 
                     1 ->
-                        Decode.succeed Ast.Canonical.CtorOptEnum
+                        Decode.succeed () -- Ast.Canonical.CtorOptEnum
 
                     2 ->
-                        Decode.succeed Ast.Canonical.CtorOptUnbox
+                        Decode.succeed () -- Ast.Canonical.CtorOptUnbox
 
                     _ ->
                         Decode.fail
             )
 
 
+{-| Decoder for an elm type annotation.
+-}
 annotation : (Int -> Int -> any) -> Decoder Ast.Canonical.Annotation
 annotation cb =
     Decode.map2 (Ast.Canonical.Annotation)
@@ -79,6 +85,8 @@ annotation cb =
         (type_ cb)
 
 
+{-| Decoder whether an elm type alias is holey or not.
+-}
 aliasType : (Int -> Int -> any) -> Decoder Ast.Canonical.AliasType
 aliasType cb =
     Decode.unsignedInt8
@@ -98,6 +106,8 @@ aliasType cb =
             )
 
 
+{-| Decoder the index and type of a field in an elm record.
+-}
 fieldtype : (Int -> Int -> any) -> Decoder Ast.Canonical.FieldType
 fieldtype cb =
     Decode.succeed Ast.Canonical.FieldType
@@ -105,6 +115,8 @@ fieldtype cb =
         |> keeper (type_ cb)
 
 
+{-| Decoder an elm type.
+-}
 type_ : (Int -> Int -> any) ->  Decoder Ast.Canonical.Type
 type_ cb =
     Decode.unsignedInt8
@@ -171,6 +183,11 @@ type_ cb =
 keeper : Decoder a -> Decoder (a -> b) -> Decoder b
 keeper parseArg parseFunc =
     Decode.map2 (<|) parseFunc parseArg
+
+
+ignore : Decoder ignore -> Decoder keep -> Decoder keep
+ignore parseIgnorer parseKeeper =
+    Decode.map2 always parseKeeper parseIgnorer
 
 
 dictToSet : Dict comparable v -> Set comparable

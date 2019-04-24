@@ -1,15 +1,18 @@
 module Bytes.Decode.Ast.BinaryOperation exposing (..)
 
-import Bytes.Decode.Util.Decode64 as Decode64 exposing (Decoder64)
 import Bytes.Decode as Decode exposing (Decoder)
 import Ast.BinaryOperation
 import Bytes.Decode.Util
 
+{-| Decoder for the precedence of an elm binary op.
+-}
 precedence : (Int -> Int -> any) -> Decoder Ast.BinaryOperation.Precedence
 precedence cb =
     Bytes.Decode.Util.int64 cb
         |> Decode.map (Ast.BinaryOperation.Precedence)
 
+{-| Decoder for the associativity of an elm binary op.
+-}
 associativity : Decoder Ast.BinaryOperation.Associativity
 associativity =
     Decode.unsignedInt8

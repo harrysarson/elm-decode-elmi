@@ -10,7 +10,6 @@ import ElmFile.Module
 import ElmFile.Package
 import Dict
 import Platform
-import Bytes.Decode.Util.Decode64
 import Debug
 
 port scanElmi : (String -> msg) -> Sub msg
@@ -24,7 +23,6 @@ type alias Flags =
 type Error
     = DecodingError
     | EncodingBase64Failed
-    | FormatError Bytes.Decode.Util.Decode64.Error
 
 type Msg
     = ScanElmi String
@@ -101,13 +99,13 @@ update msg () =
                     Base64.toBytes ifacesStr
                         |> Result.fromMaybe (EncodingBase64Failed)
 
+
                 interfaces =
                     elmi
                         |> Result.andThen
                             ((Bytes.Decode.decode (Bytes.Decode.ElmFile.Interface.interfaces logger))
                                 >> Result.fromMaybe DecodingError
                                 )
-
 
                 _ =
                     interfaces
@@ -118,6 +116,7 @@ update msg () =
                             in
                             Debug.log (Debug.toString name ++ " binaryops") int.binaryOperations
                         ))
+                        |> Result.mapError ( Debug.log "Decoding error:")
             in
                 ((), Cmd.none)
 

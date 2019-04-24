@@ -1,10 +1,21 @@
 {
     "type": "package",
-    "name": "harrysarson/parse-elmio",
-    "summary": "Parse elmi and elmo files.",
+    "name": "harrysarson/parse-elmi",
+    "summary": "Parse elmi.",
     "license": "MIT",
     "version": "1.0.0",
-    "exposed-modules": [],
+    "exposed-modules": [
+        "Ast.Canonical",
+        "Ast.BinaryOperation",
+        "ElmFile.Interface",
+        "ElmFile.Module",
+        "ElmFile.Package",
+        "Bytes.Decode.Ast.Canonical",
+        "Bytes.Decode.Ast.BinaryOperation",
+        "Bytes.Decode.ElmFile.Interface",
+        "Bytes.Decode.ElmFile.Module",
+        "Bytes.Decode.ElmFile.Package"
+    ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {
         "danfishgold/base64-bytes": "1.0.1 <= v < 2.0.0",

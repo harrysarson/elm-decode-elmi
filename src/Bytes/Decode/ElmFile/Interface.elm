@@ -10,11 +10,15 @@ import Bytes.Decode.Ast.Canonical
 import Bytes.Decode.ElmFile.Module
 import Bytes.Decode.Util
 import Dict exposing (Dict)
-import  Ast.BinaryOperation
+import Ast.BinaryOperation
 import Bytes.Decode.Ast.BinaryOperation
 import Set exposing (Set)
 
+{-| Decoder for the Interfaces type.
 
+This function will decode the binary of an `ifaces.dat` file found in the elm
+home directrory.
+-}
 interfaces : (Int -> Int -> any) -> Decoder Interfaces
 interfaces cb =
     Decode.map
@@ -29,6 +33,11 @@ interfaces cb =
         )
 
 
+{-| Decoder for the Interface type.
+
+This function will decode the binary of an `.elmi` file found in `elm-stuff`
+directories.
+-}
 interface : (Int -> Int -> any) -> Decoder Interface
 interface cb =
     Decode.map4
@@ -52,7 +61,7 @@ interface cb =
         )
         (Bytes.Decode.Util.decodeDict
             (Bytes.Decode.Util.name cb)
-            (alias_ cb)
+            (alias cb)
             cb
         )
         (Bytes.Decode.Util.decodeDict
@@ -82,17 +91,17 @@ union cb =
             )
 
 
-alias_ :  (Int -> Int -> any) -> Decoder ElmFile.Interface.Alias
-alias_  cb =
+alias :  (Int -> Int -> any) -> Decoder ElmFile.Interface.Alias
+alias  cb =
     Decode.unsignedInt8
         |> Decode.andThen
             (\id ->
                 case id of
                     0 ->
-                        Bytes.Decode.Ast.Canonical.alias_ cb |> Decode.map (ElmFile.Interface.PublicAlias)
+                        Bytes.Decode.Ast.Canonical.alias cb |> Decode.map (ElmFile.Interface.PublicAlias)
 
                     1 ->
-                        Bytes.Decode.Ast.Canonical.alias_ cb |> Decode.map (ElmFile.Interface.PrivateAlias)
+                        Bytes.Decode.Ast.Canonical.alias cb |> Decode.map (ElmFile.Interface.PrivateAlias)
 
                     _ ->
                         Decode.fail

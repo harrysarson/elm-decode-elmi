@@ -5,6 +5,8 @@ import Bytes.Decode as Decode exposing (Decoder)
 import Bytes.Decode.Util
 
 
+{-| Decoder for the name of an elm package.
+-}
 name : (Int -> Int -> any) -> Decoder ElmFile.Package.Name
 name cb =
     Decode.map2
