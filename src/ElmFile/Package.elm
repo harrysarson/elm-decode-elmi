@@ -1,5 +1,11 @@
 module ElmFile.Package exposing (Name(..))
 
+{-|
+
+@docs Name
+
+-}
+
 
 {-| The name of an elm package.
 

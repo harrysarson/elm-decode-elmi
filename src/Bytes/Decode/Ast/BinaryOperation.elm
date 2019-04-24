@@ -1,15 +1,23 @@
-module Bytes.Decode.Ast.BinaryOperation exposing (..)
+module Bytes.Decode.Ast.BinaryOperation exposing (associativity, precedence)
 
-import Bytes.Decode as Decode exposing (Decoder)
+{-|
+
+@docs associativity, precedence
+
+-}
+
 import Ast.BinaryOperation
+import Bytes.Decode as Decode exposing (Decoder)
 import Bytes.Decode.Util
+
 
 {-| Decoder for the precedence of an elm binary op.
 -}
 precedence : (Int -> Int -> any) -> Decoder Ast.BinaryOperation.Precedence
 precedence cb =
     Bytes.Decode.Util.int64 cb
-        |> Decode.map (Ast.BinaryOperation.Precedence)
+        |> Decode.map Ast.BinaryOperation.Precedence
+
 
 {-| Decoder for the associativity of an elm binary op.
 -}
@@ -17,17 +25,17 @@ associativity : Decoder Ast.BinaryOperation.Associativity
 associativity =
     Decode.unsignedInt8
         |> Decode.andThen
-          (\id ->
-              case id of
-                  0 ->
-                      Decode.succeed Ast.BinaryOperation.Left
+            (\id ->
+                case id of
+                    0 ->
+                        Decode.succeed Ast.BinaryOperation.Left
 
-                  1 ->
-                      Decode.succeed Ast.BinaryOperation.None
+                    1 ->
+                        Decode.succeed Ast.BinaryOperation.None
 
-                  2 ->
-                      Decode.succeed Ast.BinaryOperation.Right
+                    2 ->
+                        Decode.succeed Ast.BinaryOperation.Right
 
-                  _ ->
-                      Decode.fail
-          )
+                    _ ->
+                        Decode.fail
+            )

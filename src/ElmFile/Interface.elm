@@ -1,14 +1,22 @@
-module ElmFile.Interface exposing (..)
+module ElmFile.Interface exposing (Alias(..), BinaryOperation(..), Interface(..), Interfaces(..), Union(..))
 
+{-|
+
+@docs Alias, BinaryOperation, Interface, Interfaces, Union
+
+-}
+
+import Ast.BinaryOperation
 import Ast.Canonical
 import Dict exposing (Dict)
-import Ast.BinaryOperation
 import ElmFile.Module
+
 
 {-| A list of interfaces defined by the modueles in a package.
 -}
 type Interfaces
-    = Interfaces (List (ElmFile.Module.Name, Interface))
+    = Interfaces (List ( ElmFile.Module.Name, Interface ))
+
 
 {-| The interface defined by a module.
 -}
@@ -17,7 +25,7 @@ type Interface
         { types_ : Dict String Ast.Canonical.Annotation
         , unions : Dict String Union
         , aliases : Dict String Alias
-        , binaryOperations: Dict String BinaryOperation
+        , binaryOperations : Dict String BinaryOperation
         }
 
 
@@ -36,17 +44,16 @@ type Alias
     | PrivateAlias Ast.Canonical.Alias
 
 
-
 {-| A binary option in an elm file.
 
 Note: these will only show up in the interface exported by modules from
-the blessed elm/* packages.
+the blessed elm/\* packages.
 
 -}
-type BinaryOperation =
-  BinaryOperation
-    { name : String
-    , annotation : Ast.Canonical.Annotation
-    , associativity : Ast.BinaryOperation.Associativity
-    , precedence : Ast.BinaryOperation.Precedence
-    }
+type BinaryOperation
+    = BinaryOperation
+        { name : String
+        , annotation : Ast.Canonical.Annotation
+        , associativity : Ast.BinaryOperation.Associativity
+        , precedence : Ast.BinaryOperation.Precedence
+        }

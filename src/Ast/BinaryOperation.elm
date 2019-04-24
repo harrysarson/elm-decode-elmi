@@ -1,4 +1,11 @@
-module Ast.BinaryOperation exposing (..)
+module Ast.BinaryOperation exposing (Associativity(..), Precedence(..))
+
+{-|
+
+@docs Associativity, Precedence
+
+-}
+
 
 {-| Precedence of a binary operation.
 
@@ -17,6 +24,6 @@ example in `x * y * z`, `x * y` is evaluated first as `*` is left associative.
 
 -}
 type Associativity
-  = Left
-  | None
-  | Right
+    = Left
+    | None
+    | Right

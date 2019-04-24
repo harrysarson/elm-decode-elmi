@@ -1,14 +1,20 @@
-module Bytes.Decode.Ast.Canonical exposing (aliasType, alias, annotation, fieldtype, type_, union)
+module Bytes.Decode.Ast.Canonical exposing (alias, aliasType, annotation, fieldtype, type_, union, unionCtor)
+
+{-|
+
+@docs alias, aliasType, annotation, fieldtype, type_, union, unionCtor
+
+-}
 
 import Ast.Canonical
-import ElmFile.Interface exposing (Interface)
-import ElmFile.Module
 import Bytes
 import Bytes.Decode as Decode exposing (Decoder)
-import Bytes.Encode as Encode exposing (Encoder)
 import Bytes.Decode.ElmFile.Module
 import Bytes.Decode.Util
+import Bytes.Encode as Encode exposing (Encoder)
 import Dict exposing (Dict)
+import ElmFile.Interface exposing (Interface)
+import ElmFile.Module
 import Maybe.Extra
 import Result.Extra
 import Set exposing (Set)
@@ -19,12 +25,12 @@ import Set exposing (Set)
 union : (Int -> Int -> any) -> Decoder Ast.Canonical.Union
 union cb =
     Decode.succeed
-         (\vars alts ->
-                Ast.Canonical.Union
-                    { vars = vars
-                    , alts = alts
-                    }
-            )
+        (\vars alts ->
+            Ast.Canonical.Union
+                { vars = vars
+                , alts = alts
+                }
+        )
         |> keeper (Bytes.Decode.Util.list (Bytes.Decode.Util.name cb) cb)
         |> keeper (Bytes.Decode.Util.list (unionCtor cb) cb)
         |> ignore (Bytes.Decode.Util.uint64 cb)
@@ -35,7 +41,7 @@ union cb =
 -}
 alias : (Int -> Int -> any) -> Decoder Ast.Canonical.Alias
 alias cb =
-    Decode.succeed (Ast.Canonical.Alias)
+    Decode.succeed Ast.Canonical.Alias
         |> keeper (Bytes.Decode.Util.list (Bytes.Decode.Util.name cb) cb)
         |> keeper (type_ cb)
 
@@ -44,7 +50,7 @@ alias cb =
 -}
 unionCtor : (Int -> Int -> any) -> Decoder Ast.Canonical.UnionCtor
 unionCtor cb =
-    Decode.succeed (Ast.Canonical.UnionCtor)
+    Decode.succeed Ast.Canonical.UnionCtor
         |> keeper (Bytes.Decode.Util.name cb)
         |> keeper (Bytes.Decode.Util.uint64 cb)
         |> keeper (Bytes.Decode.Util.uint64 cb)
@@ -58,14 +64,17 @@ unionCtorOpts =
             (\id ->
                 case id of
                     0 ->
-                        Decode.succeed () -- Ast.Canonical.CtorOptNormal
+                        Decode.succeed ()
 
+                    -- Ast.Canonical.CtorOptNormal
                     1 ->
-                        Decode.succeed () -- Ast.Canonical.CtorOptEnum
+                        Decode.succeed ()
 
+                    -- Ast.Canonical.CtorOptEnum
                     2 ->
-                        Decode.succeed () -- Ast.Canonical.CtorOptUnbox
+                        Decode.succeed ()
 
+                    -- Ast.Canonical.CtorOptUnbox
                     _ ->
                         Decode.fail
             )
@@ -75,7 +84,7 @@ unionCtorOpts =
 -}
 annotation : (Int -> Int -> any) -> Decoder Ast.Canonical.Annotation
 annotation cb =
-    Decode.map2 (Ast.Canonical.Annotation)
+    Decode.map2 Ast.Canonical.Annotation
         (Bytes.Decode.Util.decodeDict
             (Bytes.Decode.Util.name cb)
             (Decode.succeed ())
@@ -94,11 +103,11 @@ aliasType cb =
             (\id ->
                 case id of
                     0 ->
-                        Decode.succeed (Ast.Canonical.Holey)
+                        Decode.succeed Ast.Canonical.Holey
                             |> keeper (type_ cb)
 
                     1 ->
-                        Decode.succeed (Ast.Canonical.Filled)
+                        Decode.succeed Ast.Canonical.Filled
                             |> keeper (type_ cb)
 
                     _ ->
@@ -117,7 +126,7 @@ fieldtype cb =
 
 {-| Decoder an elm type.
 -}
-type_ : (Int -> Int -> any) ->  Decoder Ast.Canonical.Type
+type_ : (Int -> Int -> any) -> Decoder Ast.Canonical.Type
 type_ cb =
     Decode.unsignedInt8
         |> Decode.andThen
@@ -139,10 +148,10 @@ type_ cb =
                                 (maybe (Bytes.Decode.Util.name cb))
 
                     3 ->
-                        Decode.succeed  Ast.Canonical.TUnit
+                        Decode.succeed Ast.Canonical.TUnit
 
                     4 ->
-                        Decode.succeed (Ast.Canonical.TTuple)
+                        Decode.succeed Ast.Canonical.TTuple
                             |> keeper (type_ cb)
                             |> keeper (type_ cb)
                             |> keeper
@@ -163,13 +172,13 @@ type_ cb =
                             |> keeper (aliasType cb)
 
                     6 ->
-                        Decode.succeed (Ast.Canonical.TType)
+                        Decode.succeed Ast.Canonical.TType
                             |> keeper (Bytes.Decode.ElmFile.Module.name cb)
                             |> keeper (Bytes.Decode.Util.name cb)
                             |> keeper (Bytes.Decode.Util.list (type_ cb) cb)
 
                     n ->
-                        Decode.succeed (Ast.Canonical.TType)
+                        Decode.succeed Ast.Canonical.TType
                             |> keeper (Bytes.Decode.ElmFile.Module.name cb)
                             |> keeper (Bytes.Decode.Util.name cb)
                             |> keeper (Bytes.Decode.Util.listLength (n - 7) (type_ cb))

@@ -1,7 +1,13 @@
 module Ast.Canonical exposing (Alias(..), AliasType(..), Annotation(..), FieldType(..), Type(..), Union(..), UnionCtor(..))
 
-import ElmFile.Module
+{-|
+
+@docs Alias, AliasType, Annotation, FieldType, Type, Union, UnionCtor
+
+-}
+
 import Dict exposing (Dict)
+import ElmFile.Module
 import Set exposing (Set)
 
 
@@ -22,9 +28,11 @@ type Type
 type FieldType
     = FieldType Int Type
 
+
 {-| An type alias can either be holey or filled.
 
 I believe that holey type aliases are those with generic parameters.
+
 -}
 type AliasType
     = Holey Type
@@ -34,6 +42,7 @@ type AliasType
 {-| An elm type annotation.
 
 The set of strings are the free type variables that the annotation contains.
+
 -}
 type Annotation
     = Annotation (Set String) Type
@@ -46,6 +55,7 @@ write a case statement for" in `alts`.
 
 Note: the binary data also includes the number of alternatives and some
 optimation information - this is all currently discarded.
+
 -}
 type Union
     = Union
@@ -54,6 +64,8 @@ type Union
         }
 
 
+{-| A type alias.
+-}
 type Alias
     = Alias (List String) Type
 
@@ -63,7 +75,7 @@ type Alias
 TODO: document the meaning of each arg.
 
 Note: some of these ints are redundant.
+
 -}
 type UnionCtor
     = UnionCtor String Int Int (List Type)
-

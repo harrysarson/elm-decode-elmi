@@ -1,14 +1,20 @@
 module Bytes.Decode.ElmFile.Module exposing (name)
 
-import ElmFile.Module
+{-|
+
+@docs name
+
+-}
+
 import Bytes.Decode as Decode exposing (Decoder)
 import Bytes.Decode.ElmFile.Package
 import Bytes.Decode.Util
+import ElmFile.Module
 
 
 {-| Decoder for the name of an elm module.
 -}
-name :  (Int -> Int -> any) -> Decoder ElmFile.Module.Name
+name : (Int -> Int -> any) -> Decoder ElmFile.Module.Name
 name cb =
     Decode.map2
         (\package module_ ->
